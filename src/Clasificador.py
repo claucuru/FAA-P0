@@ -9,45 +9,61 @@ class Clasificador:
   # Metodos abstractos que se implementan en casa clasificador concreto
   @abstractmethod
   # TODO: esta funcion debe ser implementada en cada clasificador concreto. Crea el modelo a partir de los datos de entrenamiento
-  # datosTrain: matriz numpy con los datos de entrenamiento
+  # datosTrain: matriz numpy o dataframe con los datos de entrenamiento
   # nominalAtributos: array bool con la indicatriz de los atributos nominales
-  # diccionario: array de diccionarios de la estructura Datos utilizados para la codificacion de variables discretas
+  # diccionario: array de diccionarios de la estructura Datos utilizados para la codificacion de variables
   def entrenamiento(self,datosTrain,nominalAtributos,diccionario):
     pass
   
   
   @abstractmethod
   # TODO: esta funcion debe ser implementada en cada clasificador concreto. Devuelve un numpy array con las predicciones
-  # datosTest: matriz numpy con los datos de validación
+  # datosTest: matriz numpy o dataframe con los datos de validaciï¿½n
   # nominalAtributos: array bool con la indicatriz de los atributos nominales
-  # diccionario: array de diccionarios de la estructura Datos utilizados para la codificacion de variables discretas
+  # diccionario: array de diccionarios de la estructura Datos utilizados para la codificacion de variables
+  # devuelve un numpy array o vector con las predicciones (clase estimada para cada fila de test)
   def clasifica(self,datosTest,nominalAtributos,diccionario):
     pass
   
   
   # Obtiene el numero de aciertos y errores para calcular la tasa de fallo
   # TODO: implementar
+  # datos: los datos de test reales
+  # pred: la lista de predicciones de clase (de los datos de test)
   def error(self,datos,pred):
-    # Aqui se compara la prediccion (pred) con las clases reales y se calcula el error    
+    # Aqui se compara la prediccion (pred) con las clases reales de test (datos) y se calcula el error
+    # devuelve el error
 	pass
     
     
   # Realiza una clasificacion utilizando una estrategia de particionado determinada
+  # particionado: un objeto EstrategiaParticionado (Simple o Cruzada)
+  # dataset: un objeto Datos
+  # clasificador: un objeto de una subclase de Clasificador (ClasificadorNB...)
   # TODO: implementar esta funcion
   def validacion(self,particionado,dataset,clasificador,seed=None):
        
     # Creamos las particiones siguiendo la estrategia llamando a particionado.creaParticiones
-    # - Para validacion cruzada: en el bucle hasta nv entrenamos el clasificador con la particion de train i
+    # - Para validacion cruzada: en el bucle hasta n-folds entrenamos el clasificador con la particion de train i
     # y obtenemos el error en la particion de test i
     # - Para validacion simple (hold-out): entrenamos el clasificador con la particion de train
-    # y obtenemos el error en la particion test. Otra opción es repetir la validación simple un número especificado de veces, obteniendo en cada una un error. Finalmente se calcularía la media.
+    # y obtenemos el error en la particion test. Otra opciï¿½n es repetir la validaciï¿½n simple un nï¿½mero especificado de veces, obteniendo en cada una un error. Finalmente se calcularï¿½a la media.
+    # devuelve el vector con los errores por cada particiï¿½n
+    
+    # pasos
+    # crear particiones
+    # inicializar vector de errores
+    # for cada particiï¿½n
+    #     obtener datos de train
+    #     obtener datos de test
+    #     entrenar sobre los datos de train
+    #     obtener prediciones de los datos de test (llamando a clasifica)
+    #     aï¿½adir error de la particiï¿½n al vector de errores
 	pass  
 
-##############################################################################
+####################################################################################################################################
 
-class ClasificadorNaiveBayes(Clasificador):
-
- 
+class MultinomialNB(Clasificador):
 
   # TODO: implementar
   def entrenamiento(self,datostrain,nominalAtributos,diccionario):

@@ -4,6 +4,8 @@ Pareja: 03
 """
 # -*- coding: utf-8 -*-
 import pandas as pd
+from sklearn.preprocessing import StandardScaler
+
 
 
 class Datos:
@@ -53,3 +55,17 @@ class Datos:
         Devuelve la fila del dataset cuyo indice se pasa como parametro.
         """
         return self.datos.loc[rowIndex]
+
+    def estandarizarDatos(self , media=True, std=True):
+        scaler = StandardScaler(with_mean=media, with_std=std)
+        scaler.fit(self.datos)
+        datos = scaler.transform(self.datos)
+
+        print(self.datos)
+        print("="*50)
+        print(datos)
+
+        
+
+
+
