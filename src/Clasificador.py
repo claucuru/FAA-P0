@@ -1,7 +1,9 @@
 from abc import ABCMeta,abstractmethod
-
-from Datos import Datos
 from collections import Counter
+from enum import Enum
+import numpy as np
+from Datos import Datos
+from EstrategiaParticionado import EstrategiaParticionado
 
 
 class Clasificador:
@@ -44,7 +46,7 @@ class Clasificador:
   # dataset: un objeto Datos
   # clasificador: un objeto de una subclase de Clasificador (ClasificadorNB...)
   # TODO: implementar esta funcion
-  def validacion(self,particionado,dataset,seed=None):
+  def validacion(self, particionado: EstrategiaParticionado, dataset: Datos, seed=None):
        
     # Creamos las particiones siguiendo la estrategia llamando a particionado.creaParticiones
     # - Para validacion cruzada: en el bucle hasta n-folds entrenamos el clasificador con la particion de train i
@@ -100,4 +102,37 @@ class MultinomialNB(Clasificador):
 
   # TODO: implementar
   def clasifica(self, datos: Datos):
+
     pass
+
+class DistanceMetricKNN(Enum):
+    EUCLIDES = 1
+    MANHATTAN = 2
+
+
+class KNN(Clasificador):
+    def __init__(self, k: int, distanceMetric: DistanceMetricKNN):
+        self.k = k
+        self.distanceMetric = distanceMetric
+        self.datosTrain = None
+
+
+    def entrenamiento(self, datos: Datos):
+        """
+        Se deben estandarizar fuera
+        """
+        self.datosTrain = datos
+
+
+    def clasifica(self, datos: Datos):
+        if  self.datosTrain is None:
+            return
+
+        predicciones = np.ndarray(datos.datos.shape[0])
+
+        # Clasificamos cada dato
+        for sampleTest in datos:
+          for i, sampleTrain in enumerate(self.datosTrain.datos):
+            distancia = 0
+
+            np.sum(sampleTest - sampleTrain)
