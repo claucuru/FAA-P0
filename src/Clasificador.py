@@ -1,5 +1,8 @@
 from abc import ABCMeta,abstractmethod
 
+from Datos import Datos
+from collections import Counter
+
 
 class Clasificador:
   
@@ -12,7 +15,7 @@ class Clasificador:
   # datosTrain: matriz numpy o dataframe con los datos de entrenamiento
   # nominalAtributos: array bool con la indicatriz de los atributos nominales
   # diccionario: array de diccionarios de la estructura Datos utilizados para la codificacion de variables
-  def entrenamiento(self,datosTrain,nominalAtributos,diccionario):
+  def entrenamiento(self, datos: Datos):
     pass
   
   
@@ -22,7 +25,7 @@ class Clasificador:
   # nominalAtributos: array bool con la indicatriz de los atributos nominales
   # diccionario: array de diccionarios de la estructura Datos utilizados para la codificacion de variables
   # devuelve un numpy array o vector con las predicciones (clase estimada para cada fila de test)
-  def clasifica(self,datosTest,nominalAtributos,diccionario):
+  def clasifica(self, datos: Datos):
     pass
   
   
@@ -30,7 +33,7 @@ class Clasificador:
   # TODO: implementar
   # datos: los datos de test reales
   # pred: la lista de predicciones de clase (de los datos de test)
-  def error(self,datos,pred):
+  def error(self,datos: Datos, pred):
     # Aqui se compara la prediccion (pred) con las clases reales de test (datos) y se calcula el error
     # devuelve el error
 	pass
@@ -41,7 +44,7 @@ class Clasificador:
   # dataset: un objeto Datos
   # clasificador: un objeto de una subclase de Clasificador (ClasificadorNB...)
   # TODO: implementar esta funcion
-  def validacion(self,particionado,dataset,clasificador,seed=None):
+  def validacion(self,particionado,dataset,seed=None):
        
     # Creamos las particiones siguiendo la estrategia llamando a particionado.creaParticiones
     # - Para validacion cruzada: en el bucle hasta n-folds entrenamos el clasificador con la particion de train i
@@ -65,12 +68,36 @@ class Clasificador:
 
 class MultinomialNB(Clasificador):
 
-  # TODO: implementar
-  def entrenamiento(self,datostrain,nominalAtributos,diccionario):
-	pass
+  # TODO: esta funcion debe ser implementada en cada clasificador concreto. Crea el modelo a partir de los datos de entrenamiento
+  # datosTrain: matriz numpy o dataframe con los datos de entrenamiento
+  # nominalAtributos: array bool con la indicatriz de los atributos nominales
+  # diccionario: array de diccionarios de la estructura Datos utilizados para la codificacion de variables
+  def entrenamiento(self, datos: Datos):
+    datos.ndim
+    #datos.shape[0] numero de filas del data set
+    #datos.shape[1] número de atributos (+ clase)
+
+
+    #Saco una lista con todos los valores de clase:
+    lista_clases = datos.datos[0:datos.datos.ndim, -1:]
     
-     
+    #Cuento los valores de cada clase
+    numero_tot_clase = Counter(lista_clases)
+
+    prob_priori = []
+    for num in numero_tot_clase:
+      #Sacar el valor de numero de veces que aparece la clase entre el numero total de filas (shape[0]) => PRIORI
+
+      #Calcular P(xi|y)
+      pass
     
+
+      
+
+
+    
+
+
   # TODO: implementar
-  def clasifica(self,datostest,nominalAtributos,diccionario):
+  def clasifica(self, datos: Datos):
     pass
