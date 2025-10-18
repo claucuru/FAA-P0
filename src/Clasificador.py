@@ -81,17 +81,17 @@ class MultinomialNB(Clasificador):
 
 
     #Saco una lista con todos los valores de clase:
-    lista_clases = datos.datos[0:datos.datos.ndim, -1:]
+    lista_clases = datos.datos[:, -1]
     
     #Cuento los valores de cada clase
-    numero_tot_clase = Counter(lista_clases)
+    n_c = Counter(lista_clases)
+    num_tot_clase = {int(k): v for k, v in n_c.items()}
 
-    prob_priori = []
-    for num in numero_tot_clase:
-      #Sacar el valor de numero de veces que aparece la clase entre el numero total de filas (shape[0]) => PRIORI
+    #Sacar el valor de numero de veces que aparece la clase entre el numero total de filas (shape[0]) => PRIORI
 
-      #Calcular P(xi|y)
-      pass
+    prioris = {}
+    for num in num_tot_clase:
+      prioris[num] = num/datos.datos.shape[0]
     
 
       
