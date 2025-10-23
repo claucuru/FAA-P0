@@ -180,11 +180,49 @@ class KNN(Clasificador):
         if  self.datosTrain is None:
             return
 
+        self.datosTrain.estandarizarDatos(True, True)
+        datos.estandarizarDatos(True, True)
+
         predicciones = np.ndarray(datos.datos.shape[0])
 
-        # Clasificamos cada dato
-        for sampleTest in datos:
-          for i, sampleTrain in enumerate(self.datosTrain.datos):
-            distancia = 0
+        print("\n\nDATOS TEST:\n", "-"*20)
+        print(datos.datos.iloc[:,:-1])
 
-            np.sum(sampleTest - sampleTrain)
+        # Hacemos la prediccion de clase para cada dato que queremos clasificar.
+        # Cogemos todos los atributos menos la clase
+        for sampleTest in datos.datos.iloc[:,:]:
+          # Calculamos las distancias de la muestra a cada vecino
+          distancias = []
+
+          for i, sampleTrain in enumerate(self.datosTrain.datos.iloc[:,:-1]):
+            dist = 0
+
+            if self.distanceMetric == DistanceMetricKNN.EUCLIDES:
+              dist = np.sum( (sampleTest - sampleTrain) ** 2 )
+            elif self.distanceMetric == DistanceMetricKNN.MANHATTAN:
+              pass
+
+            print(f"Distancia( {sampleTest} , {sampleTrain}) =", dist)
+
+            distancias.append( (dist, i) )
+
+          # Ordenamos la lista de vecinos
+          distancias.sort(key=lambda e1, e2 : e1[0] - e2[0])
+          print("Distancias a vecinos:")
+          print(distancias)
+
+          # Cogemos los k vecinos mas cercanos
+          cercanos = distancias[0:self.k]
+
+          counter = defaultdict(int)
+          for vecino in cercanos:
+             clase = self.datosTrain[i][-1]
+             counter[clase] += 1
+
+          predicciones[i] = Counter(counter).most_common(1)[0][1]
+
+          print("Clases de los K vecinos:")
+          print(counter)
+
+        return predicciones
+
