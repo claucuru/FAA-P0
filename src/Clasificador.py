@@ -75,7 +75,7 @@ class MultinomialNB(Clasificador):
   # nominalAtributos: array bool con la indicatriz de los atributos nominales
   # diccionario: array de diccionarios de la estructura Datos utilizados para la codificacion de variables
   def entrenamiento(self, datos: Datos):
-    datos.ndim
+    # datos.ndim
     #datos.shape[0] numero de filas del data set
     #datos.shape[1] número de atributos (+ clase)
 
