@@ -4,6 +4,7 @@ from enum import Enum
 import numpy as np
 from Datos import Datos
 from EstrategiaParticionado import EstrategiaParticionado
+from cmath import sqrt, pi, exp
 
 
 class Clasificador:
@@ -68,93 +69,10 @@ class Clasificador:
 
 ####################################################################################################################################
 
-class MultinomialNB(Clasificador):
+  
 
-  # TODO: esta funcion debe ser implementada en cada clasificador concreto. Crea el modelo a partir de los datos de entrenamiento
-  # datosTrain: matriz numpy o dataframe con los datos de entrenamiento
-  # nominalAtributos: array bool con la indicatriz de los atributos nominales
-  # diccionario: array de diccionarios de la estructura Datos utilizados para la codificacion de variables
-  def entrenamiento(self, datos: Datos):
-    # datos.ndim
-    #datos.shape[0] numero de filas del data set
-    #datos.shape[1] número de atributos (+ clase)
-
-
-    #Saco una lista con todos los valores de clase:
-    lista_clases = datos.datos[:, -1]
-    
-    #Cuento los valores de cada clase
-    n_c = Counter(lista_clases)
-    num_tot_clase = {int(k): v for k, v in n_c.items()}
-
-    #Sacar el valor de numero de veces que aparece la clase entre el numero total de filas (shape[0]) => PRIORI
-
-    prioris = {}
-    for num in num_tot_clase:
-      prioris[num] = num/datos.datos.shape[0]
-    
-    #Saco las clases que hay
-    clases = np.unique(lista_clases)
-    
-    # Diccionario con probabilidades condicionadas
-    condicionales = {c: {} for c in clases}
-
-    datos = datos.datos.shape[0]
-    
-    for clase in clases:
-      #Sacamos las filas de atributos pertenecientes a esa clase:
-      filas_clase = datos.datos[datos.datos[:, -1] == clase]
-      n_filas = len(filas_clase)
-
-      for i in range (datos):
-         #Distintos valores que puede tener un atributo i en la clase c y las veces que aparece ese valor en esa clase
-         valores, counts = np.unique(filas_clase[:, i], return_counts=True)
-         
-         # Obtenemos el número de valores posibles del atributo i
-         k = len(np.unique(datos[:, i]))
-         #Diccionario para atributo i en la clase c
-         condicionales[clase][i] = {}
-        
-
-         for v in np.unique(datos[:,i]):
-            # Recorremos todos los posibles valores del atributo y almacenamos el número de veces que aparece en la clase
-            if v in valores:
-               count_v = counts[valores == v][0]
-            else:
-              count_v = 0
-
-            condicionales[clase][i][v] = (count_v + 1) / (n_c + k)
-
-    self.modelo = {"prioris": prioris, "condicionales":condicionales}
-
-
-  # datosTest: matriz numpy o dataframe con los datos de validaci�n
-  # nominalAtributos: array bool con la indicatriz de los atributos nominales
-  # diccionario: array de diccionarios de la estructura Datos utilizados para la codificacion de variables
-  # devuelve un numpy array o vector con las predicciones (clase estimada para cada fila de test)
-  def clasifica(self, datos: Datos):
-    predicciones_clases = []
-
-    for atrb in datos.datos:
-      probabilidades_clase = {}   
-      # Recorremos todas las clases
-      for clase in self.modelo["prioris"]:
-        #Cogemos la prioridad a priori de la clase
-        p = self.modelo["prioris"][clase]
-
-        # Para todos los atributos menos la clase
-        for i, valor in enumerate(datos.datos[atrb:-1]):
-          # Aplicamos fórmula
-          p *= self.modelo["condicionales"][clase][i].get(valor, 1e-6)
-        
-        #Metemos el valor calculado de la probabildiad de la clase en el diccionario
-        probabilidades_clase[clase] = p
-      #Obtenemos la clase con mayor probabilidad
-      predicciones_clases.append(max (probabilidades_clase, key=probabilidades_clase.get))
-    return predicciones_clases
 
         
-            
     
 
 class DistanceMetricKNN(Enum):
