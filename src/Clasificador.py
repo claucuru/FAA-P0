@@ -1,10 +1,6 @@
 from abc import ABCMeta,abstractmethod
-from collections import Counter
-from enum import Enum
-import numpy as np
 from Datos import Datos
 from EstrategiaParticionado import EstrategiaParticionado
-from cmath import sqrt, pi, exp
 
 
 class Clasificador:
@@ -39,7 +35,7 @@ class Clasificador:
   def error(self,datos: Datos, pred):
     # Aqui se compara la prediccion (pred) con las clases reales de test (datos) y se calcula el error
     # devuelve el error
-	pass
+    pass
     
     
   # Realiza una clasificacion utilizando una estrategia de particionado determinada
@@ -65,82 +61,4 @@ class Clasificador:
     #     entrenar sobre los datos de train
     #     obtener prediciones de los datos de test (llamando a clasifica)
     #     a�adir error de la partici�n al vector de errores
-	pass  
-
-####################################################################################################################################
-
-  
-
-
-        
-    
-
-class DistanceMetricKNN(Enum):
-    EUCLIDES = 1
-    MANHATTAN = 2
-
-
-class KNN(Clasificador):
-    def __init__(self, k: int, distanceMetric: DistanceMetricKNN):
-        self.k = k
-        self.distanceMetric = distanceMetric
-        self.datosTrain = None
-
-
-    def entrenamiento(self, datos: Datos):
-        """
-        Se deben estandarizar fuera
-        """
-        self.datosTrain = datos
-
-
-    def clasifica(self, datos: Datos):
-        if  self.datosTrain is None:
-            return
-
-        self.datosTrain.estandarizarDatos(True, True)
-        datos.estandarizarDatos(True, True)
-
-        predicciones = np.ndarray(datos.datos.shape[0])
-
-        print("\n\nDATOS TEST:\n", "-"*20)
-        print(datos.datos.iloc[:,:-1])
-
-        # Hacemos la prediccion de clase para cada dato que queremos clasificar.
-        # Cogemos todos los atributos menos la clase
-        for sampleTest in datos.datos.iloc[:,:]:
-          # Calculamos las distancias de la muestra a cada vecino
-          distancias = []
-
-          for i, sampleTrain in enumerate(self.datosTrain.datos.iloc[:,:-1]):
-            dist = 0
-
-            if self.distanceMetric == DistanceMetricKNN.EUCLIDES:
-              dist = np.sum( (sampleTest - sampleTrain) ** 2 )
-            elif self.distanceMetric == DistanceMetricKNN.MANHATTAN:
-              pass
-
-            print(f"Distancia( {sampleTest} , {sampleTrain}) =", dist)
-
-            distancias.append( (dist, i) )
-
-          # Ordenamos la lista de vecinos
-          distancias.sort(key=lambda e1, e2 : e1[0] - e2[0])
-          print("Distancias a vecinos:")
-          print(distancias)
-
-          # Cogemos los k vecinos mas cercanos
-          cercanos = distancias[0:self.k]
-
-          counter = defaultdict(int)
-          for vecino in cercanos:
-             clase = self.datosTrain[i][-1]
-             counter[clase] += 1
-
-          predicciones[i] = Counter(counter).most_common(1)[0][1]
-
-          print("Clases de los K vecinos:")
-          print(counter)
-
-        return predicciones
-
+    pass  

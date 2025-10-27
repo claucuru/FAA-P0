@@ -1,10 +1,7 @@
 from src import Clasificador, Datos
-from abc import ABCMeta,abstractmethod
 from collections import Counter
-from enum import Enum
 import numpy as np
 from Datos import Datos
-from EstrategiaParticionado import EstrategiaParticionado
 from cmath import sqrt, pi, exp
 
 
