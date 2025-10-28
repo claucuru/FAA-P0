@@ -50,6 +50,14 @@ class Datos:
                 column.at[i] = self.diccionario[attrName][value]
 
 
+    def particion(self, index):
+        nuevosDatos = Datos.__new__()
+        nuevosDatos.datos = pd.DataFrame(self.datos, index)
+        nuevosDatos.nominalAtributos = self.nominalAtributos
+        nuevosDatos.diccionario = self.diccionario
+
+
+
     def extraeDatos(self, rowIndex: int):
         """
         Devuelve la fila del dataset cuyo indice se pasa como parametro.

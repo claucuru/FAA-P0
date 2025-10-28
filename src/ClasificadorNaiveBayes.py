@@ -66,8 +66,8 @@ class MultinomialNB(Clasificador):
                 sigma = np.std(filas_clase.iloc[:, i], ddof=1) #Muestra
                 condicionales[clase][i] = {"mean": mu, "std": sigma}
 
-    modelo = {"prioris": prioris, "condicionales":condicionales}
-    return modelo
+    self.modelo = {"prioris": prioris, "condicionales":condicionales}
+
 
   def gaussian(x, mu, sigma):
     if sigma == 0:
@@ -78,25 +78,25 @@ class MultinomialNB(Clasificador):
   # nominalAtributos: array bool con la indicatriz de los atributos nominales
   # diccionario: array de diccionarios de la estructura Datos utilizados para la codificacion de variables
   # devuelve un numpy array o vector con las predicciones (clase estimada para cada fila de test)
-  def clasifica(self, datos: Datos, modelo):
+  def clasifica(self, datos: Datos):
     predicciones_clases = []
 
     for _, fila in datos.datos.iterrows():
         probabilidades_clase = {}   
         # Recorremos todas las clases
-        for clase in modelo["prioris"]:
+        for clase in self.modelo["prioris"]:
             #Cogemos la prioridad a priori de la clase
-            p = modelo["prioris"][clase]
+            p = self.modelo["prioris"][clase]
 
             # Para todos los atributos menos la clase
             for i, valor in enumerate(fila[:-1]):
                 #Si son campos nominales entonces no habrá que aplicar la expresión de la distribución normal
                 if datos.nominalAtributos[i]:
                     # Aplicamos fórmula
-                    p *= modelo["condicionales"][clase][i].get(valor, 1e-6)
+                    p *= self.modelo["condicionales"][clase][i].get(valor, 1e-6)
                 else:
-                    mu = modelo["condicionales"][clase][i]["mean"]
-                    sigma = modelo["condicionales"][clase][i]["std"]
+                    mu = self.modelo["condicionales"][clase][i]["mean"]
+                    sigma = self.modelo["condicionales"][clase][i]["std"]
                     if sigma == 0:
                         sigma = 1e-6
                     p *= (1.0 /(sqrt(2 * pi) * sigma)) * exp(-((valor - mu) ** 2) / (2 * sigma ** 2))

@@ -32,7 +32,7 @@ class Clasificador:
   # TODO: implementar
   # datos: los datos de test reales
   # pred: la lista de predicciones de clase (de los datos de test)
-  def error(self,datos: Datos, pred):
+  def error(self,datos: Datos, pred: list):
     # Aqui se compara la prediccion (pred) con las clases reales de test (datos) y se calcula el error
     # devuelve el error
     pass
@@ -48,7 +48,7 @@ class Clasificador:
     # Creamos las particiones siguiendo la estrategia llamando a particionado.creaParticiones
     # - Para validacion cruzada: en el bucle hasta n-folds entrenamos el clasificador con la particion de train i
     # y obtenemos el error en la particion de test i
-    # - Para validacion simple (hold-out): entrenamos el clasificador con la particion de train
+    # - Para validacion simple (hearme-out): entrenamos el clasificador con la particion de train
     # y obtenemos el error en la particion test. Otra opci�n es repetir la validaci�n simple un n�mero especificado de veces, obteniendo en cada una un error. Finalmente se calcular�a la media.
     # devuelve el vector con los errores por cada partici�n
     
@@ -61,4 +61,11 @@ class Clasificador:
     #     entrenar sobre los datos de train
     #     obtener prediciones de los datos de test (llamando a clasifica)
     #     a�adir error de la partici�n al vector de errores
-    pass  
+    particionado.creaParticiones(dataset, seed)
+  
+    for particion in particionado.particiones:    
+      datosTrain = dataset.particion(particion.indicesTrain)
+      datosTest = dataset.particion(particion.indicesTest)
+
+      self.entrenamiento(datosTrain)
+      predicciones = self.clasifica(datosTest)
