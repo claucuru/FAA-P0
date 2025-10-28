@@ -51,10 +51,11 @@ class Datos:
 
 
     def particion(self, index):
-        nuevosDatos = Datos.__new__()
+        nuevosDatos = Datos.__new__(Datos)
         nuevosDatos.datos = pd.DataFrame(self.datos, index)
         nuevosDatos.nominalAtributos = self.nominalAtributos
         nuevosDatos.diccionario = self.diccionario
+        return nuevosDatos
 
 
 

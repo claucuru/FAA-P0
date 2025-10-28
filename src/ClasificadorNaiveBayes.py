@@ -1,8 +1,8 @@
-from src import Clasificador, Datos
+from Clasificador import Clasificador
 from collections import Counter
 import numpy as np
 from Datos import Datos
-from cmath import sqrt, pi, exp
+from math import sqrt, pi, exp
 
 
 class MultinomialNB(Clasificador):
@@ -69,7 +69,7 @@ class MultinomialNB(Clasificador):
     self.modelo = {"prioris": prioris, "condicionales":condicionales}
 
 
-  def gaussian(x, mu, sigma):
+  def gaussian(self, x, mu, sigma):
     if sigma == 0:
         sigma = 1e-6
     return (1.0 /(sqrt(2 * pi) * sigma)) * exp(-((x - mu) ** 2) / (2 * sigma ** 2))
@@ -106,3 +106,17 @@ class MultinomialNB(Clasificador):
         #Obtenemos la clase con mayor probabilidad
         predicciones_clases.append(max (probabilidades_clase, key=probabilidades_clase.get))
     return predicciones_clases
+  
+  def limpiar_numpy(self, array):
+      if isinstance(array, dict):
+          return {self.limpiar_numpy(k): self.limpiar_numpy(v) for k, v in array.items()}
+      elif isinstance(array, (list, tuple, set)):
+          return type(array)(self.limpiar_numpy(x) for x in array) 
+      elif isinstance(array, (np.int32, np.int64, np.integer)):
+          return int(array)
+      elif isinstance(array, (np.float32, np.float64, np.floating)):
+          return float(array)
+      elif isinstance(array, np.ndarray):
+          return array.tolist()
+      else:
+          return array

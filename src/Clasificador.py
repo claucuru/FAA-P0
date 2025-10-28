@@ -1,6 +1,9 @@
 from abc import ABCMeta,abstractmethod
 from Datos import Datos
 from EstrategiaParticionado import EstrategiaParticionado
+from sklearn.model_selection import train_test_split
+import numpy as np
+
 
 
 class Clasificador:
@@ -62,10 +65,21 @@ class Clasificador:
     #     obtener prediciones de los datos de test (llamando a clasifica)
     #     a�adir error de la partici�n al vector de errores
     particionado.creaParticiones(dataset, seed)
-  
+    errores = []
+
     for particion in particionado.particiones:    
       datosTrain = dataset.particion(particion.indicesTrain)
       datosTest = dataset.particion(particion.indicesTest)
 
       self.entrenamiento(datosTrain)
       predicciones = self.clasifica(datosTest)
+
+      clasesReales = dataset.datos.iloc[:,-1].values
+
+      print("PREDICCIONES")
+      print(predicciones)
+
+      error = np.mean(predicciones != clasesReales)
+      errores.append(error)
+
+    return errores
