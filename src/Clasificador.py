@@ -67,17 +67,23 @@ class Clasificador:
     particionado.creaParticiones(dataset, seed)
     errores = []
 
-    for particion in particionado.particiones:    
-      datosTrain = dataset.particion(particion.indicesTrain)
-      datosTest = dataset.particion(particion.indicesTest)
+    for particion in particionado.particiones:
+      datosTrain: Datos = dataset.particion(particion.indicesTrain)
+      datosTest: Datos = dataset.particion(particion.indicesTest)
+
+      print("INDICES TRAIN:", particion.indicesTrain)
+      print("INDICES TEST:", particion.indicesTest)
+      print(f"\n\nDATOS DE TRAIN ({datosTrain.datos.shape[0]} filas)\n{datosTrain.datos}")
+      print(f"\n\nDATOS DE TEST ({datosTest.datos.shape[0]} filas)\n{datosTest.datos}")
 
       self.entrenamiento(datosTrain)
       predicciones = self.clasifica(datosTest)
 
-      clasesReales = dataset.datos.iloc[:,-1].values
+      clasesReales = datosTest.datos.iloc[:,-1].values
 
-      print("PREDICCIONES")
+      print("\nPREDICCIONES VS CLASES REALES")
       print(predicciones)
+      print(clasesReales)
 
       error = np.mean(predicciones != clasesReales)
       errores.append(error)

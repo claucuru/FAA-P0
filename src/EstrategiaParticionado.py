@@ -44,7 +44,7 @@ class ValidacionSimple(EstrategiaParticionado):
     random.seed(seed)
     random.shuffle(indices)
 
-    limit = int(nrows * self.proporcionTest)
+    limit = int(nrows * (1 - self.proporcionTest))
 
     self.particiones.append(Particion(
       indices[ : limit],

@@ -44,7 +44,7 @@ if __name__ == '__main__':
     print("="*10)
     naiveBayes = MultinomialNB()
     
-    validacionSimple = ValidacionSimple(2, 3)
+    validacionSimple = ValidacionSimple(2, 0.3)
 
     dataset_test=Datos('../datasets/fuga_telefonia.csv')
     
