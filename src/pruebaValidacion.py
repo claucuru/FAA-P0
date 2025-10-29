@@ -2,6 +2,7 @@ from Datos import Datos
 from ClasificadorNaiveBayes import MultinomialNB
 from Clasificador import Clasificador
 from EstrategiaParticionado import ValidacionCruzada, ValidacionSimple
+from ClasificadorKNN import KNN, DistanceMetricKNN
 
 if __name__ == '__main__':
     dataset_test=Datos('../datasets/heart-test.csv')
@@ -43,13 +44,12 @@ if __name__ == '__main__':
     ###################################################### Validación
     print("="*10)
     naiveBayes = MultinomialNB()
+    knn = KNN(5, DistanceMetricKNN.EUCLIDES)
     
-    validacionSimple = ValidacionSimple(2, 0.3)
+    validacionSimple = ValidacionCruzada(4)
 
-    dataset_test=Datos('../datasets/fuga_telefonia.csv')
+    dataset=Datos('../datasets/fuga_telefonia.csv')
     
     print("Errores:")
-    print(naiveBayes.validacion(validacionSimple, dataset_test))
-
-    
+    print(knn.validacion(validacionSimple, dataset))
 

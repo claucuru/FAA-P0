@@ -18,6 +18,8 @@ class MultinomialNB(Clasificador):
 
 
     #Saco una lista con todos los valores de clase:
+
+
     lista_clases = datos.datos.iloc[:, -1]
     #Saco las clases que hay
     clases = np.unique(lista_clases)

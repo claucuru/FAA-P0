@@ -68,11 +68,14 @@ class Datos:
     def estandarizarDatos(self , media=True, std=True):
         scaler = StandardScaler(with_mean=media, with_std=std)
         scaler.fit(self.datos)
-        datos = scaler.transform(self.datos)
+        # datos = scaler.transform(self.datos)
+        self.datos = scaler.transform(self.datos)
 
         print(self.datos)
         print("="*50)
-        print(datos)
+        print(self.datos)
+
+        return self.datos
 
         
 

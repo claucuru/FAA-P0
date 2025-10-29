@@ -36,9 +36,8 @@ class Clasificador:
   # datos: los datos de test reales
   # pred: la lista de predicciones de clase (de los datos de test)
   def error(self,datos: Datos, pred: list):
-    # Aqui se compara la prediccion (pred) con las clases reales de test (datos) y se calcula el error
-    # devuelve el error
-    pass
+    clasesReales = datos.datos.iloc[:,-1].values
+    return np.mean(pred != clasesReales)
     
     
   # Realiza una clasificacion utilizando una estrategia de particionado determinada
@@ -79,13 +78,6 @@ class Clasificador:
       self.entrenamiento(datosTrain)
       predicciones = self.clasifica(datosTest)
 
-      clasesReales = datosTest.datos.iloc[:,-1].values
-
-      print("\nPREDICCIONES VS CLASES REALES")
-      print(predicciones)
-      print(clasesReales)
-
-      error = np.mean(predicciones != clasesReales)
-      errores.append(error)
+      errores.append(self.error(datosTest, predicciones))
 
     return errores
