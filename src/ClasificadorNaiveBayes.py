@@ -60,8 +60,9 @@ class MultinomialNB(Clasificador):
                         count_v = counts[valores == v][0]
                     else:
                         count_v = 0
-
+                    # Corrección de la place
                     condicionales[clase][i][v] = (count_v + 1) / (n_filas + k)
+                    
             else:
                 #Selecciona la columna i de la clase
                 mu = np.mean(filas_clase.iloc[:,i])

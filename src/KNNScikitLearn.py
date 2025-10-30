@@ -30,9 +30,9 @@ if __name__ == '__main__':
 
     # Calculamos el error con validacion simple
     knn.fit(dataset_train, class_train)
-    predicciones = knn.score(dataset_test, class_test)
-    print(f"KNN (k = 5), metric=euclidean - Accuracy: {predicciones:.3f}")
+    aciertos = knn.score(dataset_test, class_test)
+    print(f"KNN (k = 5), metric=euclidean \n\t Aciertos: {aciertos:.3f}  \n\t Errores: {1 - aciertos:.3f}")
 
     # Validación cruzada
     vc_predicciones = cross_val_score(knn, atributos_estandarizados, clases, cv=5)
-    print(f"Validacion cruzada (5-fold): {vc_predicciones.mean():.3f} (Desviacion tipica: {vc_predicciones.std() *2:.3f})")
+    print(f"Validacion cruzada (5-fold): \n\t Media aciertos: {vc_predicciones.mean():.3f} \n\t Media errores {1- vc_predicciones.mean():.3f}\n\t Desviacion tipica: {vc_predicciones.std() *2:.3f}")

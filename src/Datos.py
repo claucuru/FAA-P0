@@ -71,9 +71,9 @@ class Datos:
         # datos = scaler.transform(self.datos)
         self.datos = scaler.transform(self.datos)
 
-        print(self.datos)
-        print("="*50)
-        print(self.datos)
+        # print(self.datos)
+        # print("="*50)
+        # print(self.datos)
 
         return self.datos
 

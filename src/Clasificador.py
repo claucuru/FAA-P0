@@ -70,10 +70,10 @@ class Clasificador:
       datosTrain: Datos = dataset.particion(particion.indicesTrain)
       datosTest: Datos = dataset.particion(particion.indicesTest)
 
-      print("INDICES TRAIN:", particion.indicesTrain)
-      print("INDICES TEST:", particion.indicesTest)
-      print(f"\n\nDATOS DE TRAIN ({datosTrain.datos.shape[0]} filas)\n{datosTrain.datos}")
-      print(f"\n\nDATOS DE TEST ({datosTest.datos.shape[0]} filas)\n{datosTest.datos}")
+      # print("INDICES TRAIN:", particion.indicesTrain)
+      # print("INDICES TEST:", particion.indicesTest)
+      # print(f"\n\nDATOS DE TRAIN ({datosTrain.datos.shape[0]} filas)\n{datosTrain.datos}")
+      # print(f"\n\nDATOS DE TEST ({datosTest.datos.shape[0]} filas)\n{datosTest.datos}")
 
       self.entrenamiento(datosTrain)
       predicciones = self.clasifica(datosTest)
