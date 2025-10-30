@@ -4,7 +4,7 @@ Pareja: 03
 """
 # -*- coding: utf-8 -*-
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 
 
@@ -51,6 +51,10 @@ class Datos:
 
 
     def particion(self, index):
+        """
+        Devuelve un nuevo objeto Datos compuesto unicamente por las filas especificadas
+        por el parametro index del objeto actual.
+        """
         nuevosDatos = Datos.__new__(Datos)
         nuevosDatos.datos = pd.DataFrame(self.datos, index)
         nuevosDatos.nominalAtributos = self.nominalAtributos
@@ -64,20 +68,3 @@ class Datos:
         Devuelve la fila del dataset cuyo indice se pasa como parametro.
         """
         return self.datos.loc[rowIndex]
-
-    def estandarizarDatos(self , media=True, std=True):
-        scaler = StandardScaler(with_mean=media, with_std=std)
-        scaler.fit(self.datos)
-        # datos = scaler.transform(self.datos)
-        self.datos = scaler.transform(self.datos)
-
-        # print(self.datos)
-        # print("="*50)
-        # print(self.datos)
-
-        return self.datos
-
-        
-
-
-

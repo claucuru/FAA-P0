@@ -1,12 +1,14 @@
-from enum import Enum
 from collections import Counter, defaultdict
+from enum import Enum
+import time
 import numpy as np
 from Clasificador import Clasificador
 from Datos import Datos
+from Estandarizador import Estandarizador
 
 
 class DistanceMetricKNN(Enum):
-    EUCLIDES = 1
+    EUCLIDES  = 1
     MANHATTAN = 2
 
 
@@ -14,75 +16,73 @@ class KNN(Clasificador):
     def __init__(self, k: int, distanceMetric: DistanceMetricKNN):
         self.k = k
         self.distanceMetric = distanceMetric
-        self.datosTrain = None
+        self._datosTrain = None
+        self.attrsNominalesCuantitativos = None
 
 
     def entrenamiento(self, datos: Datos):
-        """
-        Se deben estandarizar fuera
-        """
-        self.datosTrain = datos
+        self._datosTrain = datos
 
 
     def clasifica(self, datos: Datos):
-        if self.datosTrain is None:
-            return
+        if self._datosTrain is None:
+            raise Exception("No se puede clasificar sin un entrenamiento previo")
 
-        n_attrs = self.datosTrain.datos.shape[1] - 1
+        # Time stats
+        t_dist = 0          # Tiempo para calcular distancias entre muestras
+        t_vecinos = 0       # Tiempo para determinar vecinos
 
+        # Se deben estandarizar los datos antes de aplicar KNN para evitar
+        # sesgos y problemas con las escalas de los atributos
+        estandarizador = Estandarizador(self._datosTrain, True, True, None)
+        dataTrain = estandarizador.estandarizarDatos(self._datosTrain.datos)
+        dataTest  = estandarizador.estandarizarDatos(datos.datos)
 
-        # Se deben estandarizar los datos antes de aplicar KNN
-        dataTrain = self.datosTrain.estandarizarDatos(True, True)
-        dataTest  = datos.estandarizarDatos(True, True)
+        #print(dataTest)
+
+        # Asumimos que la ultima columna corresponde a la clase
+        n_attrs = dataTrain.shape[1] - 1
 
         # Array de predicciones de las clases para cada muestra
         # del conjunto de test
         predicciones = np.ndarray(dataTest.shape[0])
 
-        print("\n\nDATOS TEST:\n", "-"*20)
-        print(dataTest.iloc[:,:n_attrs], end="\n\n")
+        # Array de distancias de la muestra por clasificar a cada muestra del
+        # conjunto de datos de entrenamiento.
+        distancias = np.ndarray(shape=(dataTrain.shape[0]), dtype=np.float64)
 
-        # Hacemos la prediccion de clase para cada dato que queremos clasificar.
-        # Cogemos todos los atributos menos la clase
+        # Predecimos la clase para cada muestra por clasificar a partir de las
+        # clases de los K vecinos mas cercanos.
         for idxTest, sampleTest in dataTest.iloc[:,:n_attrs].iterrows():
-          # Calculamos las distancias de la muestra a cada vecino
-          distancias = []
+            
+            t_start = time.time()
+            
+            for idxTrain, sampleTrain in dataTrain.iloc[:,:n_attrs].iterrows():
+                match self.distanceMetric:
+                    case DistanceMetricKNN.EUCLIDES:
+                        dist = np.sqrt(np.sum(np.square( (sampleTest - sampleTrain) )))
+                    case DistanceMetricKNN.MANHATTAN:
+                        dist = np.sum( np.abs( (sampleTest - sampleTrain)) )
 
-          for idxTrain, sampleTrain in dataTrain.iloc[:,:n_attrs].iterrows():
-            dist = 0
+                distancias[idxTrain] = dist
 
-            print("==DISTANCIA====================\n")
-            print("TRAIN:")
-            print(sampleTrain)
-            print("\nTEST:")
-            print(sampleTest)
+            t_dist += time.time() - t_start
 
-            if self.distanceMetric == DistanceMetricKNN.EUCLIDES:
-              dist = np.sum( (sampleTest - sampleTrain) ** 2 )
-            elif self.distanceMetric == DistanceMetricKNN.MANHATTAN:
-              pass
+            t_start = time.time()
 
-            print(f"\nDISTANCE={dist}")
+            # Obtenemos la lista de indices que ordenarian las distancias 
+            # WARNING: No resuelve empates
+            k_idx = np.argsort(distancias)[0:self.k]
+            k_clases = self._datosTrain.datos.iloc[k_idx, -1]
 
-            distancias.append( (dist, idxTrain) )
+            # Extraemos la clase mas repetida entre los vecinos
+            # WARNING: No se valoran empates entre clases
+            predicciones[idxTest] = Counter(k_clases).most_common(1)[0][0]
 
-          # Ordenamos la lista de vecinos
-          distancias.sort(key=lambda e1 : e1[0])
-          print("Distancias a vecinos:")
-          print(distancias)
+            t_vecinos += time.time() - t_start
 
-          # Cogemos los k vecinos mas cercanos
-          cercanos = distancias[0:self.k]
 
-          counter = defaultdict(int)
-          for dist, idxTrain in cercanos:
-             neighbour_class = self.datosTrain.datos.iat[idxTrain, -1]
-             counter[neighbour_class] += 1
-
-          # Tomamos la clase mas comun entre los vecinos mas
-          # cercanos a la muestra de test
-          most_freq_class, freq = Counter(counter).most_common(1)[0]
-
-          predicciones[idxTest] = most_freq_class
+        print("Tiempo Calculo Distancias (sec):", t_dist)
+        print("Tiempo Calculo vecinos (sec):", t_vecinos)
 
         return predicciones

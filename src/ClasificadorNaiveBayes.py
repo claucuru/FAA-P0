@@ -5,7 +5,9 @@ from Datos import Datos
 from math import sqrt, pi, exp
 
 
-class MultinomialNB(Clasificador):
+SQRT_2_PI = sqrt(2 * pi)
+
+class ClasificadorNaiveBayes(Clasificador):
 
   # TODO: esta funcion debe ser implementada en cada clasificador concreto. Crea el modelo a partir de los datos de entrenamiento
   # datosTrain: matriz numpy o dataframe con los datos de entrenamiento
@@ -72,11 +74,6 @@ class MultinomialNB(Clasificador):
     self.modelo = {"prioris": prioris, "condicionales":condicionales}
 
 
-  def gaussian(self, x, mu, sigma):
-    if sigma == 0:
-        sigma = 1e-6
-    return (1.0 /(sqrt(2 * pi) * sigma)) * exp(-((x - mu) ** 2) / (2 * sigma ** 2))
-
   # datosTest: matriz numpy o dataframe con los datos de validaci�n
   # nominalAtributos: array bool con la indicatriz de los atributos nominales
   # diccionario: array de diccionarios de la estructura Datos utilizados para la codificacion de variables
@@ -102,14 +99,15 @@ class MultinomialNB(Clasificador):
                     sigma = self.modelo["condicionales"][clase][i]["std"]
                     if sigma == 0:
                         sigma = 1e-6
-                    p *= (1.0 /(sqrt(2 * pi) * sigma)) * exp(-((valor - mu) ** 2) / (2 * sigma ** 2))
+                    p *= (1.0 /(SQRT_2_PI * sigma)) * exp(-((valor - mu) ** 2) / (2 * sigma ** 2))
 
             #Metemos el valor calculado de la probabildiad de la clase en el diccionario
             probabilidades_clase[clase] = p
         #Obtenemos la clase con mayor probabilidad
         predicciones_clases.append(max (probabilidades_clase, key=probabilidades_clase.get))
     return predicciones_clases
-  
+
+
   def limpiar_numpy(self, array):
       if isinstance(array, dict):
           return {self.limpiar_numpy(k): self.limpiar_numpy(v) for k, v in array.items()}
