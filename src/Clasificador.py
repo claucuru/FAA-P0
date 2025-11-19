@@ -83,3 +83,25 @@ class Clasificador:
       errores.append(self.error(datosTest, predicciones))
 
     return errores
+
+  def analisis_roc(self, datosClasificados: Datos, predicciones: np.ndarray):
+    vp = 0
+    fp = 0
+    fn = 0
+    vn = 0
+
+    for i, (_, dato) in enumerate(datosClasificados.datos.iterrows()):
+      clase = dato.iloc[-1]
+
+      if clase == 1:
+        if predicciones[i] == 1:
+          vp += 1
+        else:
+          fp += 1
+      else:
+        if predicciones[i] == 1:
+          fn += 1
+        else:
+          vn += 1
+
+    return (vp, fp, fn, vn)

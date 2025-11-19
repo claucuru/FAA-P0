@@ -3,9 +3,9 @@ Autores: Claudia Cuevas Ruano, Pablo Tejero Lascorz
 Pareja: 03
 """
 # -*- coding: utf-8 -*-
+import numpy as np
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
-
 
 
 class Datos:
@@ -33,7 +33,7 @@ class Datos:
         self.nominalAtributos: list[bool] = [ True if attr in nominalAttrs else False for attr in self.datos.columns ]
 
         # Registrar la conversion de atributos nominales en numericos
-        self.diccionario = dict()
+        self.diccionario = dict() 
         for attr in nominalAttrs:
             self.diccionario[attr] = dict()
             ordenados = sorted(set(self.datos[attr]))
@@ -50,6 +50,17 @@ class Datos:
                 column.at[i] = self.diccionario[attrName][value]
 
 
+        # Castear a float64
+        for attr in nominalAttrs:
+            self.datos[attr] = self.datos[attr].astype(np.float64)
+
+
+    def convertir_a_float(self):
+        for i, column in enumerate(self.datos.columns):
+            if not self.nominalAtributos[i]:
+                self.datos[column] = self.datos[column].astype(np.float64)
+
+
     def particion(self, index):
         """
         Devuelve un nuevo objeto Datos compuesto unicamente por las filas especificadas
@@ -60,7 +71,6 @@ class Datos:
         nuevosDatos.nominalAtributos = self.nominalAtributos
         nuevosDatos.diccionario = self.diccionario
         return nuevosDatos
-
 
 
     def extraeDatos(self, rowIndex: int):
