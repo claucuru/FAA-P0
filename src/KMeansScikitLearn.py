@@ -4,20 +4,22 @@ from Datos import Datos
 from ClasificadorRegLog import ClasificadorRegLog
 from Estandarizador import Estandarizador2
 from EstrategiaParticionado import ValidacionSimple
-from KMeans import KMeans
+from sklearn.cluster import KMeans 
 import numpy as np
 
 def realizar_estudio (k, attrs_estandarizados, clases):
 
     print("="*60)
-    print("K-MEANS CON K = {k}")
+    print("K-MEANS (sklearn) CON K = {k}")
     print("="*60)
     
-    kmeans = KMeans(k=k, max_iter=300, limite=1e-4, seed=7)
-    kmeans.KMeansAlgorithm(attrs_estandarizados.values)
-    sse = kmeans.SSE
+    kmeans = KMeans(n_clusters=k, max_iter=300, random_state=7)
+    kmeans.fit(attrs_estandarizados.values)
 
-    labels = kmeans.labels
+    sse = kmeans.inertia_
+
+    labels = kmeans.labels_
+
     #Los clusters deben ser diferentes
     unique_clusters = np.unique(labels)
     print(f"Se han encontrado un total de {len(unique_clusters)}")
@@ -72,7 +74,7 @@ def realizar_estudio (k, attrs_estandarizados, clases):
     # Calculamos el porcentaje de predicciones correctas
     acc = np.mean(predicciones == clases.values)
     print(f"\nPorcentaje de pureza total: {acc:.2%}")
-    print(f"SSE: ", sse)
+    print(f"SSE SKLEARN: ", sse)
 
     return acc
 
@@ -92,7 +94,7 @@ if __name__ == "__main__":
         resultados[k] = realizar_estudio(k, attrs_estandarizados=attrs_estandarizados, clases=clases)
     
     print ("\n" + "="*60)
-    print("RESULTADOS FINALES")
+    print("RESULTADOS FINALES CON SKLEARN")
     print ("="*60)
     for k, acc in resultados.items():
         print(f"K = {k:2d} -> Pureza: {acc:.2%}")
