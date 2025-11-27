@@ -4,9 +4,10 @@
 **Pareja:** 03
 
 ## Clasificadores
+- Algoritmo Genético
 - KNN
 - NaiveBayes
 - Regresión Logística
 
-## Clasificador
+## Métodos de Clustering
 - KMeans
