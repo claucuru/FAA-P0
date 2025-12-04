@@ -1,4 +1,5 @@
 import random
+import numpy as np
 from sklearn.preprocessing import OneHotEncoder
 from clasificadores.Clasificador import Clasificador
 from Datos import Datos
@@ -16,8 +17,14 @@ class ClasificadorAG(Clasificador):
 
     def entrenamiento(self, datos: Datos):
         self.encoder.fit(datos.datos)
-        datosTest = self.encoder.transform(datos.datos)
+        datosTrain = self.encoder.transform(datos.datos)
+        attrsTrain = datosTrain[:,:-1]
+        clasesTrain = datosTrain[:,-1]
+        len_regla = len(datosTrain[0])
 
+        # Cromosoma -> Fila dataset. Una regla es un cromosoma.
+        # Individuo -> Conjunto de cromosomas.
+        # Poblacion -> Conjunto de individuos.
 
         # Escogemos una poblacion inicial. La poblacion es un conjunto de individuos cuyo
         # tamano viene dado por self.n_individuos. Cada individuo es un conjunto de uno o
@@ -32,7 +39,7 @@ class ClasificadorAG(Clasificador):
             individuo = []
 
             for cromosoma in range(self.max_reglas):
-                # Creamos un cromosoma como una combinación aleatoria de valores
+                # Creamos un cromosoma como una combinacion aleatoria de valores
                 # para cada atributo
                 cromosoma = []
 
@@ -55,6 +62,33 @@ class ClasificadorAG(Clasificador):
             results_f = [self._fitness(individuo) for individuo in poblacion]
             sum_fitness = sum(results_f)
             results_f = [fitness / sum_fitness for fitness in results_f]
+            
+            # Array con los resultados de fitness acumulados
+            cum = 0
+            cum_f = np.empty(len(results_f))
+            for i, result in enumerate(results_f):
+                cum_f[i] = result + cum
+
+            progenitores_seleccionados = [
+                poblacion[np.searchsorted(cum_f, random.uniform(0, 1)) - 1]
+                for _ in range(self.n_individuos)
+            ]
+
+            # Arcane s2ep9
+            # TODO: Escoger una regla del progenitor para el cruce
+            for i in range(progenitores_seleccionados, step=2):
+                p1 = progenitores_seleccionados[i]
+                p2 = progenitores_seleccionados[i + 1]
+
+                punto_cruce = random.randint(1, len_regla - 1)
+
+                s1 = p1[:punto_cruce] + p2[punto_cruce:]
+                s2 = p1[punto_cruce:] + p2[:punto_cruce]
+
+            # Mutacion: cada individuo de la poblacion tiene una probabilidad
+            # de mutar
+            for individuo in poblacion:
+                prob_mutacion = random.randint(len_regla * len(poblacion))
 
             n_epochs += 1
 
