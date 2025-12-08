@@ -1,0 +1,2 @@
+from .ClasificadorSklearnKNN import ClasificadorSklearnKNN
+from .ClasificadorSklearnRegLog import ClasificadorSklearnRegLog

@@ -3,6 +3,7 @@ Autores: Claudia Cuevas Ruano, Pablo Tejero Lascorz
 Pareja: 03
 """
 from abc import ABCMeta,abstractmethod
+from typing import Optional
 import random
 from Datos import Datos
 
@@ -20,10 +21,13 @@ class EstrategiaParticionado:
   # Clase abstracta
   __metaclass__ = ABCMeta
 
-  # Atributos: deben rellenarse adecuadamente para cada estrategia concreta. Se pasan en el constructor 
+
+  def __init__(self):
+    self.particiones = []
+
 
   @abstractmethod
-  def creaParticiones(self, datos: Datos, seed=None):
+  def creaParticiones(self, datos: Datos, seed: Optional[int] = None) -> list[Particion]:
     pass
   
 
@@ -31,13 +35,23 @@ class EstrategiaParticionado:
 
 class ValidacionSimple(EstrategiaParticionado):
   def __init__(self, numeroEjecuciones: int, proporcionTest: float):
+    super().__init__()
     self.numeroEjecuciones = numeroEjecuciones
     self.proporcionTest = proporcionTest
-    self.particiones = []
 
-  # Crea particiones segun el metodo tradicional de division de los datos segun el porcentaje deseado y el n�mero de ejecuciones deseado
-  # Devuelve una lista de particiones (clase Particion)
+
   def creaParticiones(self, datos: Datos, seed=None):
+    """
+    Crea particiones segun el metodo tradicional de division de los datos
+    segun el porcentaje deseado y el numero de ejecuciones deseado.
+    
+    Devuelve
+    --------
+      Lista de particiones (clase `Particion`)`con un único elemento.
+    """
+    # Reset listado de particiones
+    self.particiones.clear()
+
     nrows = datos.datos.shape[0]
     indices = list(range(nrows))
 
@@ -51,27 +65,37 @@ class ValidacionSimple(EstrategiaParticionado):
       indices[limit : ]
     ))
 
+    return self.particiones
+
 
 #####################################################################################################      
 class ValidacionCruzada(EstrategiaParticionado):
   def __init__(self, numeroParticiones: int):
+    super().__init__()
     self.numeroParticiones = numeroParticiones
-    self.particiones = []
 
-  # Crea particiones segun el metodo de validacion cruzada.
-  # El conjunto de entrenamiento se crea con las nfolds-1 particiones y el de test con la particion restante
-  # Esta funcion devuelve una lista de particiones (clase Particion)
+
   def creaParticiones(self, datos: Datos, seed=None):
-    nrows: int = datos.datos.shape[0]
+    """
+    Crea particiones segun el metodo de validacion cruzada. El conjunto
+    de entrenamiento se crea con los (K-folds - 1) particiones y el de
+    test con la particion restante.
 
-    # Crear una permutacion de las filas del dataset
+    Devuelve
+    --------
+      Lista de particiones (clase `Particion`).
+    """
+    # Vaciar listado de particiones
+    self.particiones.clear()
+
+    nrows: int = datos.datos.shape[0]
     indices = list(range(nrows))
 
     random.seed(seed)
     random.shuffle(indices)
 
     # Filas por cada fold
-    rows_per_fold         = nrows // self.numeroParticiones
+    rows_per_fold = nrows // self.numeroParticiones
 
     # Si la divison entre el numero de filas del dataset y el numero de
     # particiones no es entera, entonces debemos distribuir el resto de
@@ -95,3 +119,5 @@ class ValidacionCruzada(EstrategiaParticionado):
           indicesTest=indices[start_row : stop_row]
         )
       )
+
+    return self.particiones

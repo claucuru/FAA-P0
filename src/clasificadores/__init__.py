@@ -1,0 +1,6 @@
+from .Clasificador import Clasificador
+from .ClasificadorAlgoritmoGenetico import ClasificadorAG
+from .ClasificadorKNN import ClasificadorKNN
+from .ClasificadorNaiveBayes import ClasificadorNaiveBayes
+from .ClasificadorRegLog import ClasificadorRegLog
+from .DistanceMetric import DistanceMetric

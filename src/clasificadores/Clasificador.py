@@ -1,9 +1,8 @@
-from abc import ABCMeta,abstractmethod
+from abc import ABCMeta, abstractmethod
 import time
+import numpy as np
 from Datos import Datos
 from EstrategiaParticionado import EstrategiaParticionado
-from sklearn.model_selection import train_test_split
-import numpy as np
 
 
 class Clasificador:
@@ -45,7 +44,7 @@ class Clasificador:
   # dataset: un objeto Datos
   # clasificador: un objeto de una subclase de Clasificador (ClasificadorNB...)
   # TODO: implementar esta funcion
-  def validacion(self, particionado: EstrategiaParticionado, dataset: Datos, seed=None):
+  def validacion(self, particionado: EstrategiaParticionado, dataset: Datos, seed: int = 1, print_time: bool = False):
        
     # Creamos las particiones siguiendo la estrategia llamando a particionado.creaParticiones
     # - Para validacion cruzada: en el bucle hasta n-folds entrenamos el clasificador con la particion de train i
@@ -78,22 +77,24 @@ class Clasificador:
 
       t_end = time.time()
 
-      print("Total Time:", t_end - t_start)
+      if print_time:
+        print("Total Time:", t_end - t_start)
 
       errores.append(self.error(datosTest, predicciones))
 
     return errores
 
-  def analisis_roc(self, datosClasificados: Datos, predicciones: np.ndarray):
+
+  def matriz_confusion(self, datosClasificados: Datos, predicciones: np.ndarray):
     vp = 0
     fp = 0
     fn = 0
     vn = 0
 
     for i, (_, dato) in enumerate(datosClasificados.datos.iterrows()):
-      clase = dato.iloc[-1]
+      claseReal = dato.iloc[-1]
 
-      if clase == 1:
+      if claseReal == 1:
         if predicciones[i] == 1:
           vp += 1
         else:

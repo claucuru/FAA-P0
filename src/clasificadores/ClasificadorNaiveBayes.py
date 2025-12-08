@@ -1,4 +1,8 @@
-from Clasificador import Clasificador
+"""
+Autores: Claudia Cuevas Ruano, Pablo Tejero Lascorz
+Pareja: 03
+"""
+from .Clasificador import Clasificador
 from collections import Counter
 import numpy as np
 from Datos import Datos
@@ -14,39 +18,31 @@ class ClasificadorNaiveBayes(Clasificador):
   # nominalAtributos: array bool con la indicatriz de los atributos nominales
   # diccionario: array de diccionarios de la estructura Datos utilizados para la codificacion de variables
   def entrenamiento(self, datos: Datos):
-    # datos.ndim
-    #datos.shape[0] numero de filas del data set
-    #datos.shape[1] número de atributos (+ clase)
+    n_muestras = datos.datos.shape[0]
+    n_attrs = datos.datos.shape[1] - 1
 
 
-    #Saco una lista con todos los valores de clase:
+    # Lista de las clases que hay
+    clases_muestras = datos.datos.iloc[:, -1]
+    clases = np.unique(clases_muestras)
 
-
-    lista_clases = datos.datos.iloc[:, -1]
-    #Saco las clases que hay
-    clases = np.unique(lista_clases)
-
-    #Cuento los valores de cada clase
-    n_c = Counter(lista_clases)
-    num_tot_clase = {int(k): v for k, v in n_c.items()}
-
-    #Sacar el valor de numero de veces que aparece la clase entre el numero total de filas (shape[0]) => PRIORI
-    prioris = {}
-    for num in num_tot_clase:
-        prioris[num] = num_tot_clase[num]/datos.datos.shape[0]
+    # Cuento el numero de muestras para cada clase y calculo las probabilidades
+    # a priori de cada clase como el numero de veces que aparece una muestra con
+    # esa clase entre el numero de muestras totales.
+    prioris = {
+        int(clase): (n / n_muestras) for clase, n in Counter(clases_muestras).items()
+    }
 
     # Diccionario con probabilidades condicionadas
     condicionales = {c: {} for c in clases}
-
-    n_attrs = datos.datos.shape[1] - 1
 
     for clase in clases:
         #Sacamos las filas de atributos pertenecientes a esa clase:
         filas_clase = datos.datos[datos.datos.iloc[:, -1] == clase]
         n_filas = len(filas_clase)
 
-        for i in range (n_attrs): # ALTURA
-            if datos.nominalAtributos[i]:            
+        for i in range(n_attrs):
+            if datos.nominalAtributos[i]:
                 #Distintos valores que puede tener un atributo i en la clase c y las veces que aparece ese valor en esa clase
                 valores, counts = np.unique(filas_clase.iloc[:, i], return_counts=True)
 
@@ -62,7 +58,7 @@ class ClasificadorNaiveBayes(Clasificador):
                         count_v = counts[valores == v][0]
                     else:
                         count_v = 0
-                    # Corrección de la place
+                    # Corrección de Laplace
                     condicionales[clase][i][v] = (count_v + 1) / (n_filas + k)
                     
             else:
@@ -71,7 +67,8 @@ class ClasificadorNaiveBayes(Clasificador):
                 sigma = np.std(filas_clase.iloc[:, i], ddof=1) #Muestra
                 condicionales[clase][i] = {"mean": mu, "std": sigma}
 
-    self.modelo = {"prioris": prioris, "condicionales":condicionales}
+    self._prioris = prioris
+    self._condicionales = condicionales
 
 
   # datosTest: matriz numpy o dataframe con los datos de validaci�n
@@ -82,27 +79,26 @@ class ClasificadorNaiveBayes(Clasificador):
     predicciones_clases = []
 
     for _, fila in datos.datos.iterrows():
-        probabilidades_clase = {}   
+        probabilidades_clase = {}
+
         # Recorremos todas las clases
-        for clase in self.modelo["prioris"]:
-            #Cogemos la prioridad a priori de la clase
-            p = self.modelo["prioris"][clase]
+        for clase, priori in self._prioris.items():
 
             # Para todos los atributos menos la clase
             for i, valor in enumerate(fila[:-1]):
                 #Si son campos nominales entonces no habrá que aplicar la expresión de la distribución normal
                 if datos.nominalAtributos[i]:
                     # Aplicamos fórmula
-                    p *= self.modelo["condicionales"][clase][i].get(valor, 1e-6)
+                    posteriori = priori * self._condicionales[clase][i].get(valor, 1e-6)
                 else:
-                    mu = self.modelo["condicionales"][clase][i]["mean"]
-                    sigma = self.modelo["condicionales"][clase][i]["std"]
+                    mu = self._condicionales[clase][i]["mean"]
+                    sigma = self._condicionales[clase][i]["std"]
                     if sigma == 0:
                         sigma = 1e-6
-                    p *= (1.0 /(SQRT_2_PI * sigma)) * exp(-((valor - mu) ** 2) / (2 * sigma ** 2))
+                    posteriori = (1.0 / (SQRT_2_PI * sigma)) * exp(-((valor - mu) ** 2) / (2 * sigma ** 2))
 
             #Metemos el valor calculado de la probabildiad de la clase en el diccionario
-            probabilidades_clase[clase] = p
+            probabilidades_clase[clase] = posteriori
         #Obtenemos la clase con mayor probabilidad
         predicciones_clases.append(max (probabilidades_clase, key=probabilidades_clase.get))
     return predicciones_clases
