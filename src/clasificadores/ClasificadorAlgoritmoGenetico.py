@@ -16,15 +16,16 @@ class ClasificadorAG(Clasificador):
 
 
     def entrenamiento(self, datos: Datos):
-        self.encoder.fit(datos.datos)
+        self.encoder.fit(datos.datos) 
         datosTrain = self.encoder.transform(datos.datos)
-        attrsTrain = datosTrain[:,:-1]
-        clasesTrain = datosTrain[:,-1]
         len_regla = len(datosTrain[0])
 
-        # Cromosoma -> Fila dataset. Una regla es un cromosoma.
-        # Individuo -> Conjunto de cromosomas.
         # Poblacion -> Conjunto de individuos.
+        # Individuo -> Un cromosoma.
+        # Cromosoma -> Conjunto de reglas o genes.
+        # Regla     -> Equivalente a una fila del dataset.
+        # Gen       -> Una regla.
+        # Alelo     -> Valor posible para un gen. Hay 2^len_regla posibles alelos. 
 
         # Escogemos una poblacion inicial. La poblacion es un conjunto de individuos cuyo
         # tamano viene dado por self.n_individuos. Cada individuo es un conjunto de uno o
@@ -38,17 +39,17 @@ class ClasificadorAG(Clasificador):
         for individuo in range(self.n_individuos):
             individuo = []
 
-            for cromosoma in range(self.max_reglas):
-                # Creamos un cromosoma como una combinacion aleatoria de valores
-                # para cada atributo
-                cromosoma = []
+            for _ in range(random.randint(1, self.max_reglas)):
+                # Creamos un gen o regla como una combinacion aleatoria de valores para
+                # cada atributo
+                regla = []
 
                 for attr in datos.datos.columns.values:
-                    # Escogemos un valor aleatorio
+                    # Escogemos un valor aleatorio para el atributo
                     value = random.choice(datos.diccionario[attr])
-                    cromosoma.append(value)
+                    regla.append(value)
 
-                individuo.append(cromosoma)
+                individuo.append(individuo)
 
             poblacion.append(individuo)
 
@@ -62,7 +63,7 @@ class ClasificadorAG(Clasificador):
             results_f = [self._fitness(individuo) for individuo in poblacion]
             sum_fitness = sum(results_f)
             results_f = [fitness / sum_fitness for fitness in results_f]
-            
+
             # Array con los resultados de fitness acumulados
             cum = 0
             cum_f = np.empty(len(results_f))
@@ -73,6 +74,9 @@ class ClasificadorAG(Clasificador):
                 poblacion[np.searchsorted(cum_f, random.uniform(0, 1)) - 1]
                 for _ in range(self.n_individuos)
             ]
+
+            # Lista de descendientes
+            descendientes = []
 
             # Arcane s2ep9
             # TODO: Escoger una regla del progenitor para el cruce
@@ -85,10 +89,35 @@ class ClasificadorAG(Clasificador):
                 s1 = p1[:punto_cruce] + p2[punto_cruce:]
                 s2 = p1[punto_cruce:] + p2[:punto_cruce]
 
-            # Mutacion: cada individuo de la poblacion tiene una probabilidad
-            # de mutar
+                descendientes.append(s1)
+                descendientes.append(s2)
+
+            # Mutacion: cada bit tiene una probabilidad de mutar
+            # TODO: Comprobar
             for individuo in poblacion:
-                prob_mutacion = random.randint(len_regla * len(poblacion))
+                for regla in individuo:
+                    for bit in regla:
+                        prob_mutacion = random.randint(len_regla * len(poblacion))
+
+                        if prob_mutacion == 1:
+                            # mutacion
+                            bit = (~bit) & 1
+
+                    descendientes.append(bit)
+
+            # Seleccion de supervivientes
+            poblacion.clear()
+
+            n_descendientes = len(descendientes)
+            n_mejores = n_descendientes * self.elitismo
+
+            fitness = [self._fitness(individuo) for individuo in descendientes]
+            idx_n_mejores = np.argsort(fitness)[n_descendientes - n_mejores:]
+
+            for i in idx_n_mejores:
+                poblacion.append(descendientes.pop(i))
+
+            poblacion += np.random.shuffle(descendientes)[self.n_individuos - n_mejores]
 
             n_epochs += 1
 
