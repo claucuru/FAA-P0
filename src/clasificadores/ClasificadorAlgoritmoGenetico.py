@@ -11,6 +11,8 @@ class ClasificadorAG(Clasificador):
         self.n_individuos = n_individuos
         self.max_epochs = max_epochs
         self.max_reglas = max_reglas
+        self.best_fitness = None
+        self._fitness = -np.inf
 
         self.encoder = OneHotEncoder()
 
@@ -38,8 +40,8 @@ class ClasificadorAG(Clasificador):
 
         for individuo in range(self.n_individuos):
             individuo = []
-
-            for _ in range(random.randint(1, self.max_reglas)):
+            n_reglas = random.randint(1, self.max_reglas)
+            for _ in range(n_reglas):
                 # Creamos un gen o regla como una combinacion aleatoria de valores para
                 # cada atributo
                 regla = []
@@ -52,7 +54,6 @@ class ClasificadorAG(Clasificador):
                 individuo.append(individuo)
 
             poblacion.append(individuo)
-
 
         n_epochs = 0
         while n_epochs < self.max_epochs:
@@ -119,12 +120,36 @@ class ClasificadorAG(Clasificador):
 
             poblacion += np.random.shuffle(descendientes)[self.n_individuos - n_mejores]
 
+            for ind in poblacion:
+                f = self._fitness(ind)
+                if f > self.best_fitness:
+                    self.best_fitness = f
+                    self.best_individual = ind
+
             n_epochs += 1
 
 
     def clasifica(self, datos: Datos):
+        datosTest = self.encoder.transform(datos.datos)
+        return self._fitness(self.best_individual, datosTest)
+         
+
+
+    def _fitness(self, individuo, datos: Datos):
         datosTrain = self.encoder.transform(datos.datos)
 
+        # cuantas instancias del dataset cumplen al menos una regla del individuo
+        aciertos = 0
+        # Para cada instancia del dataset
+        for i in range(datos.shape[0]):
+            x = datos[i]
+            coincide = False
+            for regla in individuo:
+                if np.array_equal(x, regla):
+                    coincide = True
+                    break
+            if coincide:
+                aciertos += 1
+        return aciertos / datos.shape[0]
+            
 
-    def _fitness(self, individuo):
-        pass
