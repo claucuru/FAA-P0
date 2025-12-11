@@ -12,15 +12,20 @@ class ClasificadorAG(Clasificador):
         self.max_epochs = max_epochs
         self.max_reglas = max_reglas
         self.best_fitness = -np.inf
-        self.best_individual = None
+        self.best_individuo = None
 
         self.encoder = OneHotEncoder()
+        self.num_val_por_atributo = None
 
 
     def entrenamiento(self, datos: Datos):
         self.encoder.fit(datos.datos) 
         datosTrain = self.encoder.transform(datos.datos)
         len_regla = len(datosTrain[0])
+
+        self.num_val_por_atributo = [
+            len(valores_atributo) for valores_atributo in self.encoder.categories_
+        ]
 
         # Poblacion -> Conjunto de individuos.
         # Individuo -> Un cromosoma.
@@ -75,6 +80,7 @@ class ClasificadorAG(Clasificador):
                 poblacion[np.searchsorted(cum_f, random.uniform(0, 1)) - 1]
                 for _ in range(self.n_individuos)
             ]
+         
 
             # Lista de descendientes
             descendientes = []
@@ -124,60 +130,105 @@ class ClasificadorAG(Clasificador):
                 f = self._fitness(ind)
                 if f > self.best_fitness:
                     self.best_fitness = f
-                    self.best_individual = ind
+                    self.best_individuo = ind
 
             n_epochs += 1
 
 
     def clasifica(self, datos: Datos):
         datosTest = self.encoder.transform(datos.datos)
-        return self._fitness(self.best_individual, datosTest)
-         
+        return [ self._predecir_clase_individuo(self.best_individuo, muestra) for muestra in datosTest ]
 
 
-    def _fitness(self, individuo, datos: Datos):
-        datosTrain = self.encoder.transform(datos.datos)
-        atributos = list(datos.datos.columns)
-
+    def _fitness(self, individuo, datos: np.ndarray):
         # cuantas instancias del dataset cumplen al menos una regla del individuo
-        aciertos = 0
-        # Para cada instancia del dataset
-        for i in range(datos.datos.shape[0]):
-            # Reglas del individuo que coinciden
-            reglasCoinciden = []
-            x = datos.datos.iloc[i]
-            # Verificamos cada regla del individuo
-            for regla in individuo:
-                coincide = True
-                # Compara cada atributo
-                for j, attr in enumerate (atributos[:-1]):
-                    if x[attr] != regla[attr]:
-                        coincide = False
-                        break
-                if coincide:
-                    # metemos la prediccion, que es el último elemento
-                    reglasCoinciden.append(regla[-1])
-            
-            # Si no coincide ninguna, pasamos a la siguiente instancia
-            if not reglasCoinciden:
-                continue
+        num_aciertos = 0
 
+        # Contabilizar aciertos y errores para cada fila del dataset
+        for muestra in datos:
+            pred = self._predecir_clase_individuo(individuo, muestra)
 
-            votos = {}
-            for regla in reglasCoinciden:
-                clase_pred = regla[atributos[-1]]
-                votos[atributos[-1]] = votos.get(atributos[-1], 0) + 1 
-            max_votos = max(votos.values())
-            
-            mejores = [clase for clase, v in votos.items() if v == max_votos]
-            # Si hay empate se elige aleatoriamente
-            pred = random.choice(mejores)
-
-            if pred == x[atributos[-1]]:
+            if pred == muestra[-1]:
                 aciertos += 1
+
+        return num_aciertos / datos.shape[0]
+
+
+    def _predecir_clase_individuo(self, individuo: list[np.ndarray], muestra: np.ndarray):
+            coincidencias = [0, 0]
+
+            # Analizamos si se cumple alguna regla
+            for regla in individuo:
+                cumple_regla = True
+
+                col_ini = 0
+                col_end = 0
+                for num_valores_attr in self.num_val_por_atributo:
+                    col_ini += col_end
+                    col_end += num_valores_attr
+
+                    cumple_condicion_attr = False
+
+                    for col in range(col_ini, col_end):
+                        if muestra[col] == regla[col]:
+                            cumple_condicion_attr = True
+                            break
+
+                    if not cumple_condicion_attr:
+                        cumple_regla = False
+                        #break
+
+                if cumple_regla:
+                    coincidencias[regla[-1]] += 1
+
+
+            if coincidencias[0] == coincidencias[1]:
+                # Ninguna regla coincide con la muestra
+                if coincidencias[0] == 0:
+                    return None
+                else:
+                    pred = random.choice(coincidencias)
+            
+            return pred
+
+
+        # Para cada instancia del dataset
+        # for i in range(datos.datos.shape[0]):
+        #     # Reglas del individuo que coinciden
+        #     reglasCoinciden = []
+        #     x = datos.datos.iloc[i]
+        #     # Verificamos cada regla del individuo
+        #     for regla in individuo:
+        #         coincide = True
+        #         # Compara cada atributo
+        #         for j, attr in enumerate (atributos[:-1]):
+        #             if x[attr] != regla[attr]:
+        #                 coincide = False
+        #                 break
+        #         if coincide:
+        #             # metemos la prediccion, que es el último elemento
+        #             reglasCoinciden.append(regla[-1])
+            
+        #     # Si no coincide ninguna, pasamos a la siguiente instancia
+        #     if not reglasCoinciden:
+        #         continue
+
+
+        #     votos = {}
+        #     for regla in reglasCoinciden:
+        #         clase_pred = regla[atributos[-1]]
+        #         votos[atributos[-1]] = votos.get(atributos[-1], 0) + 1 
+        #     max_votos = max(votos.values())
+            
+        #     mejores = [clase for clase, v in votos.items() if v == max_votos]
+        #     # Si hay empate se elige aleatoriamente
+        #     pred = random.choice(mejores)
+
+        #     if pred == x[atributos[-1]]:
+        #         aciertos += 1
         
             
 
-        return aciertos / datos.shape[0]
+        # return aciertos / datos.shape[0]
             
 
