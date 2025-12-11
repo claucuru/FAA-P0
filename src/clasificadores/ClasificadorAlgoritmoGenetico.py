@@ -11,8 +11,8 @@ class ClasificadorAG(Clasificador):
         self.n_individuos = n_individuos
         self.max_epochs = max_epochs
         self.max_reglas = max_reglas
-        self.best_fitness = None
-        self._fitness = -np.inf
+        self.best_fitness = -np.inf
+        self.best_individual = None
 
         self.encoder = OneHotEncoder()
 
@@ -51,7 +51,7 @@ class ClasificadorAG(Clasificador):
                     value = random.choice(datos.diccionario[attr])
                     regla.append(value)
 
-                individuo.append(individuo)
+                individuo.append(regla)
 
             poblacion.append(individuo)
 
@@ -137,19 +137,47 @@ class ClasificadorAG(Clasificador):
 
     def _fitness(self, individuo, datos: Datos):
         datosTrain = self.encoder.transform(datos.datos)
+        atributos = list(datos.datos.columns)
 
         # cuantas instancias del dataset cumplen al menos una regla del individuo
         aciertos = 0
         # Para cada instancia del dataset
-        for i in range(datos.shape[0]):
-            x = datos[i]
-            coincide = False
+        for i in range(datos.datos.shape[0]):
+            # Reglas del individuo que coinciden
+            reglasCoinciden = []
+            x = datos.datos.iloc[i]
+            # Verificamos cada regla del individuo
             for regla in individuo:
-                if np.array_equal(x, regla):
-                    coincide = True
-                    break
-            if coincide:
+                coincide = True
+                # Compara cada atributo
+                for j, attr in enumerate (atributos[:-1]):
+                    if x[attr] != regla[attr]:
+                        coincide = False
+                        break
+                if coincide:
+                    # metemos la prediccion, que es el último elemento
+                    reglasCoinciden.append(regla[-1])
+            
+            # Si no coincide ninguna, pasamos a la siguiente instancia
+            if not reglasCoinciden:
+                continue
+
+
+            votos = {}
+            for regla in reglasCoinciden:
+                clase_pred = regla[atributos[-1]]
+                votos[atributos[-1]] = votos.get(atributos[-1], 0) + 1 
+            max_votos = max(votos.values())
+            
+            mejores = [clase for clase, v in votos.items() if v == max_votos]
+            # Si hay empate se elige aleatoriamente
+            pred = random.choice(mejores)
+
+            if pred == x[atributos[-1]]:
                 aciertos += 1
+        
+            
+
         return aciertos / datos.shape[0]
             
 
