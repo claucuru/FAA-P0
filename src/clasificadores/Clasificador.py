@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+import random
 import time
 import numpy as np
 from Datos import Datos
@@ -62,6 +63,9 @@ class Clasificador:
     #     entrenar sobre los datos de train
     #     obtener prediciones de los datos de test (llamando a clasifica)
     #     a�adir error de la partici�n al vector de errores
+    random.seed(seed)
+    np.random.seed(seed)
+
     particionado.creaParticiones(dataset, seed)
     errores = []
 
