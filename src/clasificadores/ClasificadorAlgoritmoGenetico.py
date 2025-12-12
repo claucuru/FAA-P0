@@ -11,21 +11,35 @@ class ClasificadorAG(Clasificador):
         self.n_individuos = n_individuos
         self.max_epochs = max_epochs
         self.max_reglas = max_reglas
+
         self.best_fitness = -np.inf
         self.best_individuo = None
 
-        self.encoder = OneHotEncoder()
+        self.encoder = OneHotEncoder(sparse_output=False)
         self.num_val_por_atributo = None
+        self.n_attrs = 0
 
 
     def entrenamiento(self, datos: Datos):
-        self.encoder.fit(datos.datos) 
-        datosTrain = self.encoder.transform(datos.datos)
-        len_regla = len(datosTrain[0])
+        attrs = datos.datos.iloc[:,:-1]
+        clase = datos.datos.iloc[:,-1]
+
+        self.n_attrs = attrs.shape[1]
+
+        # Ajustar encoder a los datos de entrenamiento (solo atributos, no clase)
+        self.encoder.fit(attrs)
 
         self.num_val_por_atributo = [
             len(valores_atributo) for valores_atributo in self.encoder.categories_
         ]
+
+        # Transformar los datos
+        datosTrain = np.ndarray(shape=(datos.datos.shape[0], sum(self.num_val_por_atributo) + 1))
+        datosTrain[:,:-1] = self.encoder.fit_transform(attrs)
+        datosTrain[:,-1]  = clase
+
+        len_regla = datosTrain.shape[1]
+
 
         # Poblacion -> Conjunto de individuos.
         # Individuo -> Un cromosoma.
@@ -43,41 +57,25 @@ class ClasificadorAG(Clasificador):
         # posibles valores.
         poblacion = []
 
-        for individuo in range(self.n_individuos):
-            individuo = []
+        for i in range(self.n_individuos):
             n_reglas = random.randint(1, self.max_reglas)
-            for _ in range(n_reglas):
-                # Creamos un gen o regla como una combinacion aleatoria de valores para
-                # cada atributo
-                regla = []
 
-                for attr in datos.datos.columns.values:
-                    # Escogemos un valor aleatorio para el atributo
-                    value = random.choice(datos.diccionario[attr])
-                    regla.append(value)
-
-                individuo.append(regla)
+            individuo = np.random.randint(0, 2, (n_reglas, len_regla))
 
             poblacion.append(individuo)
 
-        n_epochs = 0
-        while n_epochs < self.max_epochs:
+
+        for _ in range(self.max_epochs):
             # Seleccion de progenitores para la descendencia. Go spin the wheel.
             # Recomendado: https://es.piliapp.com/random/wheel/
             # Aplicamos la funcion F a cada individuo de la muestra. Dividimos el
             # resultado entre la suma de las funciones F de cada individuo.
-            results_f = [self._fitness(individuo) for individuo in poblacion]
-            sum_fitness = sum(results_f)
-            results_f = [fitness / sum_fitness for fitness in results_f]
-
-            # Array con los resultados de fitness acumulados
-            cum = 0
-            cum_f = np.empty(len(results_f))
-            for i, result in enumerate(results_f):
-                cum_f[i] = result + cum
+            fitness_values = np.array([self._fitness(individuo, datosTrain) for individuo in poblacion])
+            fitness_probs = fitness_values / np.sum(fitness_values)
+            fitness_cum_probs = np.cumsum(fitness_probs)
 
             progenitores_seleccionados = [
-                poblacion[np.searchsorted(cum_f, random.uniform(0, 1)) - 1]
+                poblacion[np.searchsorted(fitness_cum_probs, random.uniform(0, 1)) - 1]
                 for _ in range(self.n_individuos)
             ]
          
@@ -86,62 +84,92 @@ class ClasificadorAG(Clasificador):
             descendientes = []
 
             # Arcane s2ep9
-            # TODO: Escoger una regla del progenitor para el cruce
-            for i in range(progenitores_seleccionados, step=2):
-                p1 = progenitores_seleccionados[i]
-                p2 = progenitores_seleccionados[i + 1]
+            for i in range(0, len(progenitores_seleccionados), 2):
+                # Progenitores para el cruce
+                p1: np.ndarray = progenitores_seleccionados[i]
+                p2: np.ndarray = progenitores_seleccionados[(i + 1) % self.n_individuos]
+
+                # Se escoge una regla al azar de cada progenitor y un punto de
+                # cruce aleatorio.
+                idx_r1 = random.randint(0, p1.shape[0] - 1)
+                idx_r2 = random.randint(0, p2.shape[0] - 1)
+                r1 = p1[idx_r1]
+                r2 = p2[idx_r2]
 
                 punto_cruce = random.randint(1, len_regla - 1)
 
-                s1 = p1[:punto_cruce] + p2[punto_cruce:]
-                s2 = p1[punto_cruce:] + p2[:punto_cruce]
+                # Formacion de sucesores
+                nr1 = np.concatenate( (r1[:punto_cruce], r2[punto_cruce:]) )
+                nr2 = np.concatenate( (r1[punto_cruce:], r2[:punto_cruce]) )
+
+                s1 = np.copy(p1); s1[idx_r1] = nr1
+                s2 = np.copy(p2); s2[idx_r2] = nr2
 
                 descendientes.append(s1)
                 descendientes.append(s2)
 
             # Mutacion: cada bit tiene una probabilidad de mutar
-            # TODO: Comprobar
+            aux = len_regla * len(poblacion)
+
             for individuo in poblacion:
+                individuo_mutado = np.copy(individuo)
+                mutado = False
+
                 for regla in individuo:
-                    for bit in regla:
-                        prob_mutacion = random.randint(len_regla * len(poblacion))
+                    for i, bit in enumerate(regla):
+                        prob_mutacion = random.randint(1, aux)
 
                         if prob_mutacion == 1:
-                            # mutacion
-                            bit = (~bit) & 1
+                            regla[i] = (~bit) & 1
+                            mutado = True
 
-                    descendientes.append(bit)
+                if mutado:
+                    descendientes.append(individuo_mutado)
 
-            # Seleccion de supervivientes
-            poblacion.clear()
+            # Seleccion de supervivientes. La nueva generacion se convierte en la
+            # nueva poblacion. Sin embargo, aplicamos un cierto grado de elitismo,
+            # manteniendo a los k mejores individuos escogidos entre la poblacion
+            # antigua y los sucesores generados.
+            len_pobl = len(poblacion)
 
-            n_descendientes = len(descendientes)
-            n_mejores = n_descendientes * self.elitismo
+            k_mejores = int(len_pobl * self.elitismo)
 
-            fitness = [self._fitness(individuo) for individuo in descendientes]
-            idx_n_mejores = np.argsort(fitness)[n_descendientes - n_mejores:]
+            np.random.shuffle(descendientes)
+            rand_descendientes = descendientes[k_mejores:self.n_individuos]
 
-            for i in idx_n_mejores:
-                poblacion.append(descendientes.pop(i))
+            fitness_values = np.concatenate((fitness_values, np.array([
+                self._fitness(individuo, datosTrain)
+                for individuo in descendientes
+            ])))
+            idx_k_mejores = np.argsort(fitness_values)[-k_mejores:]
 
-            poblacion += np.random.shuffle(descendientes)[self.n_individuos - n_mejores]
+            poblacion_k_mejores = [
+                descendientes[i - len_pobl] if i >= len_pobl else poblacion[i]
+                for i in idx_k_mejores
+            ]
 
-            for ind in poblacion:
-                f = self._fitness(ind)
-                if f > self.best_fitness:
-                    self.best_fitness = f
-                    self.best_individuo = ind
+            poblacion = rand_descendientes + poblacion_k_mejores
 
-            n_epochs += 1
+        # Seleccionar mejor individuo
+        for individuo in poblacion:
+            fitness = self._fitness(individuo, datosTrain)
+            if fitness > self.best_fitness:
+                self.best_fitness = fitness
+                self.best_individuo = individuo
 
 
     def clasifica(self, datos: Datos):
-        datosTest = self.encoder.transform(datos.datos)
-        return [ self._predecir_clase_individuo(self.best_individuo, muestra) for muestra in datosTest ]
+        datosTest = self.encoder.transform(datos.datos.iloc[:,:self.n_attrs])
+        predicciones = np.array([
+            self._predecir_clase_individuo(self.best_individuo, muestra)
+            for muestra in datosTest
+        ])
+
+        return predicciones
 
 
     def _fitness(self, individuo, datos: np.ndarray):
-        # cuantas instancias del dataset cumplen al menos una regla del individuo
+        # Cuantas instancias del dataset cumplen al menos una regla del individuo
         num_aciertos = 0
 
         # Contabilizar aciertos y errores para cada fila del dataset
@@ -149,12 +177,12 @@ class ClasificadorAG(Clasificador):
             pred = self._predecir_clase_individuo(individuo, muestra)
 
             if pred == muestra[-1]:
-                aciertos += 1
+                num_aciertos += 1
 
         return num_aciertos / datos.shape[0]
 
 
-    def _predecir_clase_individuo(self, individuo: list[np.ndarray], muestra: np.ndarray):
+    def _predecir_clase_individuo(self, individuo: np.ndarray, muestra: np.ndarray):
             coincidencias = [0, 0]
 
             # Analizamos si se cumple alguna regla
@@ -176,7 +204,7 @@ class ClasificadorAG(Clasificador):
 
                     if not cumple_condicion_attr:
                         cumple_regla = False
-                        #break
+                        break
 
                 if cumple_regla:
                     coincidencias[regla[-1]] += 1
@@ -186,49 +214,10 @@ class ClasificadorAG(Clasificador):
                 # Ninguna regla coincide con la muestra
                 if coincidencias[0] == 0:
                     return None
+                # Empate entre las dos clases
                 else:
                     pred = random.choice(coincidencias)
-            
+            else:
+                pred = max(coincidencias)
+
             return pred
-
-
-        # Para cada instancia del dataset
-        # for i in range(datos.datos.shape[0]):
-        #     # Reglas del individuo que coinciden
-        #     reglasCoinciden = []
-        #     x = datos.datos.iloc[i]
-        #     # Verificamos cada regla del individuo
-        #     for regla in individuo:
-        #         coincide = True
-        #         # Compara cada atributo
-        #         for j, attr in enumerate (atributos[:-1]):
-        #             if x[attr] != regla[attr]:
-        #                 coincide = False
-        #                 break
-        #         if coincide:
-        #             # metemos la prediccion, que es el último elemento
-        #             reglasCoinciden.append(regla[-1])
-            
-        #     # Si no coincide ninguna, pasamos a la siguiente instancia
-        #     if not reglasCoinciden:
-        #         continue
-
-
-        #     votos = {}
-        #     for regla in reglasCoinciden:
-        #         clase_pred = regla[atributos[-1]]
-        #         votos[atributos[-1]] = votos.get(atributos[-1], 0) + 1 
-        #     max_votos = max(votos.values())
-            
-        #     mejores = [clase for clase, v in votos.items() if v == max_votos]
-        #     # Si hay empate se elige aleatoriamente
-        #     pred = random.choice(mejores)
-
-        #     if pred == x[atributos[-1]]:
-        #         aciertos += 1
-        
-            
-
-        # return aciertos / datos.shape[0]
-            
-
